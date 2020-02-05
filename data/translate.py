@@ -1,6 +1,7 @@
 #file for handling translations of coordinates
 import math
 import numpy as np
+import sys
 
 def H(h1,h2):
     '''computes the hamilton product of two
@@ -78,15 +79,22 @@ def equiequate(v,imgdims):
     neg_y = 1 if k > 0.0 else -1
     yaw = 0
     pitch = 0
+    if k > 1.0:
+        k = 1.0
+    if k < -1.0:
+        k = -1.0
     if k < 1.0 and k > -1.0:
         yaw = math.acos(round((i)/(math.sqrt(math.pow(i,2) + math.pow(j,2))), 4))
         pitch = round(math.sqrt(math.pow(i,2) + math.pow(j,2)),4)
+        if pitch > 1:
+            pitch = 1;
         pitch = math.asin(pitch)
 
         if pitch == (math.pi / 2):
             pitch = (3.14 / 2)
     else:
         print('EDGE ALERT --------------------')
+        print(k)
         pitch = 0.0001
         yaw = 0.0001
     #print('pitch: %f, yaw: %f' %(pitch, yaw))

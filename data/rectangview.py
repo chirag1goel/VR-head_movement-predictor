@@ -8,8 +8,8 @@ resize is the inverse scaling factor for the video display
 binIDs if set to True will display each bin's ID on the video
 '''
 #SETTINGS ------------------
-name = "Rollercoaster"
-bins = [5,8]
+name = "Elephant"
+bins = [10,16]
 load_data_set = 'train'
 resize = 8
 binIDs = True
@@ -20,14 +20,16 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import matplotlib
 import cv2
+import pickle
 import hmd_procure
+import tsinghua_procure
 import translate
 
 #a = {'a':1, 'b':2, 'c':3, 'd': 4}
 names = {'Rollercoaster': '../saliency/videos/8lsB-P8nGSM.mkv', 'Elephant': '../saliency/videos/2bpICIClAIg.webm',
 'Diving': '../saliency/videos/2OzlksZBTiA.mkv', 'Rhino': '../saliency/videos/7IWp875pCxQ.webm',
 'Timelapse': '../saliency/videos/CIw8R8thnm8.mkv', 'Venice': '../saliency/videos/s-AJRFQuAtE.mkv',
-'Paris': '../saliency/videos/sJxiPiAaB4k.mkv'}
+'Paris': '../saliency/videos/sJxiPiAaB4k.mkv','video_0': '../saliency/videos/1-1-Conan Gore Fly.mp4'}
 
 #setup video capture
 if name in names.keys():
@@ -41,16 +43,30 @@ else:
 #load participant data, specify 'test' or 'train' for specific data
 grabber = hmd_procure.HMDGrabber(load_data_set)
 participants = grabber.grabData()
+
+# grabber = tsinghua_procure.HMDGrabber()
+# participants = grabber.grabData()
+
 print("loading %sing HMD with a total of %i folders" %(load_data_set, grabber.numParticipants()))
 
 #from the HMDGrabber, sort out only data with the name 'name'
 rollercoaster_data = []
+print(len(participants))
 for p in participants:
-    v = [v for v in p.videos if v.name == name][0]
-    offset = int(v.offset)
-    v = v.videoData
-    #print(len(v))
-    rollercoaster_data.append(v[:])
+    # for v in p.videos:
+    #     print(v.name)
+    # print(name)
+    try:
+        # print()
+        v = [v for v in p.videos if v.name == name][0]
+        offset = int(v.offset)
+        print(v)
+        print(offset)
+        v = v.videoData
+        #print(len(v))
+        rollercoaster_data.append(v[:])
+    except:
+        pass
 
 cap = cv2.VideoCapture(filename)
 #set start time in ms
@@ -81,10 +97,15 @@ for i, d in enumerate(rollercoaster_data):
     #d is a list of dict entries for each frame
     for dd in d:
         frame, q0, q1, q2, q3 = dd['frame'], float(dd['pitch']), float(dd['yaw']), float(dd['roll']), float(dd['z'])
+        # print(q0)
+        # print(q1)
+        # print(q2)
+        # print(q3)
         #p is [i,j,k] rotated from [1,0,0] by (q0,q1,q2,q3)
         p = translate.rotate(q0,q1,q2,q3)
+        # print(p)
         #(x,y) is the 3D point 'p' projected onto a 2D plane sized (w,h)
-        x, y = translate.equiequate(p,w,h)
+        x, y = translate.equiequate(p,[w,h])
         #id is the binID corresponding to (x,y) on the 2D plane sized (w,h) with [row,col] bins
         id = translate.binid([x,y],bins,[h,w])
         seq.append([frame, id])
@@ -103,6 +124,13 @@ for p in positions:
         #append [frame,    binID,    bin_bottom_left_corner_(x,y)]
         bb.append([d[0], d[1], [x,y]])
     bbs.append(bb[:])
+
+# with open('tsinghuaData', 'wb') as fp:
+#     pickle.dump(bbs, fp)
+
+# with open('offset', 'wb') as fp:
+#     pickle.dump(offset, fp)
+# print("written")
 
 #create an array of all the bins, each entry being [binID, bottomLeftX, bottomLeftY]
 #for plotting purposes
